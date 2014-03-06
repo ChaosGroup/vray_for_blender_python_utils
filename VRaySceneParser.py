@@ -1,5 +1,5 @@
 #
-# V-Ray For Blender
+# V-Ray Python Tools
 #
 # http://chaosgroup.com
 #

@@ -1,7 +1,7 @@
 #
-# V-Ray/Blender
+# V-Ray Python Tools
 #
-# http://vray.cgdo.ru
+# http://chaosgroup.com
 #
 # Author: Andrei Izrantcev
 # E-Mail: andrei.izrantcev@chaosgroup.com
