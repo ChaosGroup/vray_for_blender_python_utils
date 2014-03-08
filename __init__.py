@@ -26,4 +26,5 @@ __all__ = [
 	'VRayProxy',
 	'VRaySceneParser',
 	'VrmatParser',
+	'github',
 ]
