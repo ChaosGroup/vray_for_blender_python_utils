@@ -32,7 +32,7 @@ from math import fmod
 
 # Debug stuff
 #
-USE_DEBUG = False
+USE_DEBUG = True
 
 # VRayProxy constants
 #
@@ -144,7 +144,18 @@ class VoxelChannel(MeshFileReader):
                 flagsList.append(ChannelFlags[key])
         self.report("  flags        = %s" % (", ".join(flagsList)))
 
-    def loadData(self):        
+    def loadData(self):
+        def _readChannelData(size):
+            channelRawData = self.meshFile.read(size)
+            if self.flags & MF_COMPRESSED:
+                data = zlib.decompressobj().decompress(channelRawData)
+                # self.report("  Compressed data:", channelRawData)
+                # self.report("  Uncompressed data:", self.data)
+                self.report("  Expected / uncompressed size:", elementsSize, len(data))
+            else:
+                data = channelRawData
+            return data
+
         self.report("Channel Data")
 
         elementsSize = self.elementSize * self.numElements
@@ -156,18 +167,8 @@ class VoxelChannel(MeshFileReader):
 
         self.report("  Data size = %i" % (dataSize))
 
-        # Load only channels we need
-        if self.channelID in [VERT_GEOM_CHANNEL, FACE_TOPO_CHANNEL]:
-            channelRawData = self.meshFile.read(dataSize)
-
-            if self.flags & MF_COMPRESSED:
-                self.data = zlib.decompressobj().decompress(channelRawData)
-
-                # self.report("  Compressed data:", channelRawData)
-                # self.report("  Uncompressed data:", self.data)
-                self.report("  Expected / uncompressed size:", elementsSize, len(self.data))
-            else:
-                self.data = channelRawData
+        if self.channelID in {VERT_GEOM_CHANNEL, FACE_TOPO_CHANNEL, MAYA_INFO_CHANNEL}:
+            self.data = _readChannelData(dataSize)
         else:
             self.meshFile.seek(dataSize, os.SEEK_CUR)
 
@@ -270,6 +271,39 @@ class MeshVoxel(MeshFileReader):
         vertexArray = self.chunk(floatArray, 3)
         
         return vertexArray
+
+    def getUvChannels(self):
+        uvChannles = []
+        for chan in self.channels:
+            if chan.channelID >= VERT_TEX_CHANNEL0:
+                uvChannles.append(VERT_TEX_CHANNEL0 - chan.channelID)
+        return uvChannles
+
+    def getUvChannelNames(self):
+        mayaInfoChannel = self.channels.getChannelByType(MAYA_INFO_CHANNEL)
+        if mayaInfoChannel is None:
+            return ()
+
+        uvChannels = []
+
+        def _getBytes(data, size):
+            value = data[0:size]
+            data = data[size:]
+            return value, data
+
+        number_of_uv_sets, mayaInfoChannel.data = _getBytes(mayaInfoChannel.data, 4)
+        number_of_uv_sets = struct.unpack("I", number_of_uv_sets)[0]
+
+        for i in range(number_of_uv_sets):
+            name_len, mayaInfoChannel.data = _getBytes(mayaInfoChannel.data, 4)
+            name_len = struct.unpack("I", name_len)[0]
+
+            name, mayaInfoChannel.data = _getBytes(mayaInfoChannel.data, name_len)
+            name = name.decode(encoding='ascii')
+
+            uvChannels.append(name)
+
+        return uvChannels
 
 
 class VoxelInfo:
@@ -406,7 +440,14 @@ class MeshFile(MeshFileReader):
         return None
 
 
-    def getPreviewMesh(self, animType, animOffset, speed, frame=0):
+    def getGeometryVoxel(self, frameInfo):
+        for voxel in frameInfo.voxels:
+            if voxel.flags == MVF_GEOMETRY_VOXEL:
+                return voxel
+        return None
+
+
+    def getPreviewMesh(self, animType=0, animOffset=0.0, speed=1.0, frame=0.0):
         frameIndex = self.getFrameByType(animType, animOffset, speed, frame)
         if frameIndex not in self.frames:
             return None
@@ -425,11 +466,35 @@ class MeshFile(MeshFileReader):
         faces    = voxel.getFaces()
         vertices = voxel.getVertices()
 
-        return { 'vertices' : vertices, 'faces' : faces }
+        uvChannels = voxel.getUvChannelNames()
+        if uvChannels:
+            self.report("Number of UV sets: %i" % len(uvChannels))
+            for i,chanName in enumerate(uvChannels):
+                self.report("  UV Set %i: %s" % (i, chanName))
+        else:
+            geomVoxelInfo = self.getGeometryVoxel(self.frames[frameIndex])
+            if geomVoxelInfo:
+                voxel = MeshVoxel(self.meshFile)
+                voxel.fileOffset = voxelInfo.fileOffset
+                voxel.bbox       = voxelInfo.bbox
+                voxel.flags      = voxelInfo.flags
+
+                voxel.loadData()
+
+                uvChannels = voxel.getUvChannels()
+                self.report("Number of UV channles: %i" % len(uvChannels))
+                for i,chanId in enumerate(uvChannels):
+                    self.report("  UV Set %i: %i" % (i, chanId))
+
+        return {
+            'vertices' : vertices,
+            'faces'    : faces,
+            'uv_sets'  : uvChannels,
+        }
 
 
 def main():
-    testFile = "~/devel/vrayblender/test-suite/vrmesh/animated_mesh.vrmesh"
+    testFile = "~/devel/vrayblender/test-suite/vrmesh/torus_with_uv.vrmesh"
 
     meshFile = MeshFile(testFile)
     meshFile.readFile()
