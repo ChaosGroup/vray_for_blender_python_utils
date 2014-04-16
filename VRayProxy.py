@@ -274,7 +274,7 @@ class MeshVoxel(MeshFileReader):
 
     def getUvChannels(self):
         uvChannles = []
-        for chan in self.channels:
+        for chan in self.channels.channels:
             if chan.channelID >= VERT_TEX_CHANNEL0:
                 uvChannles.append(VERT_TEX_CHANNEL0 - chan.channelID)
         return uvChannles
@@ -496,11 +496,14 @@ class MeshFile(MeshFileReader):
 def main():
     global USE_DEBUG
 
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("file", help="*.vrmesh filepath")
+    args = parser.parse_args()
+
     USE_DEBUG = True
 
-    testFile = "~/devel/vrayblender/test-suite/vrmesh/torus_with_uv.vrmesh"
-
-    meshFile = MeshFile(testFile)
+    meshFile = MeshFile(args.file)
     meshFile.readFile()
 
     mesh = meshFile.getPreviewMesh(0)
