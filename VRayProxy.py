@@ -32,7 +32,7 @@ from math import fmod
 
 # Debug stuff
 #
-USE_DEBUG = True
+USE_DEBUG = False
 
 # VRayProxy constants
 #
@@ -494,6 +494,10 @@ class MeshFile(MeshFileReader):
 
 
 def main():
+    global USE_DEBUG
+
+    USE_DEBUG = True
+
     testFile = "~/devel/vrayblender/test-suite/vrmesh/torus_with_uv.vrmesh"
 
     meshFile = MeshFile(testFile)
