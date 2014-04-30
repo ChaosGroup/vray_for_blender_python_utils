@@ -49,7 +49,7 @@ def getPluginDesc(s,loc,toks):
 #
 to_int    = lambda s,l,t: int(t[0])
 to_float  = lambda s,l,t: float(t[0])
-to_vector = lambda s,l,t: tuple(t[0])
+to_list   = lambda s,l,t: tuple(t[0])
 no_quotes = lambda s,l,t: t[0][1:-1]
 
 # Generic syntax
@@ -67,23 +67,27 @@ comma  = Literal(",")
 #
 Color = Keyword("Color").suppress()
 AColor = Keyword("AColor").suppress()
+List = Keyword("List").suppress()
+ListInt = Keyword("ListInt").suppress()
 
 # Values
 #
-nameType = Word(alphanums+"@_")
+nameType = Word(alphanums+"@_:")
 
 real    = Combine(Word(nums+"+-", nums) + dot + Optional(Word(nums)) + Optional(CaselessLiteral("E") + Word(nums+"+-",nums))).setParseAction(to_float)
 integer = Word(nums+"+-", nums).setParseAction(to_int)
 
-color  = Color + lparen + Group(delimitedList(real)).setParseAction(to_vector) + rparen
-acolor = AColor + lparen + Group(delimitedList(real)).setParseAction(to_vector) + rparen
+color   = Color   + lparen + Group(delimitedList(real)).setParseAction(to_list)     + rparen
+acolor  = AColor  + lparen + Group(delimitedList(real)).setParseAction(to_list)     + rparen
+intList = ListInt + lparen + Group(delimitedList(integer)).setParseAction(to_list)  + rparen
+strList = List    + lparen + Group(delimitedList(nameType)).setParseAction(to_list) + rparen
 
 output = nameType + Optional(Word("::") + Word(alphas+"_"))
 
 # Plugin Attribute
 #
 attrName  = nameType
-attrValue = integer ^ real ^ color ^ acolor ^ nameType ^ output ^ quotedString.setParseAction(no_quotes)
+attrValue = integer ^ real ^ color ^ acolor ^ nameType ^ output ^ quotedString.setParseAction(no_quotes) ^ intList ^ strList
 
 pluginAttr = Group(attrName + equals + attrValue + semi)
 
@@ -126,4 +130,9 @@ def GetMaterialsNames(filepath):
 
 
 if __name__ == '__main__':
-    print(GetMaterialsNames("/home/bdancer/devel/vrayblender/test-suite/animation_export_optimization/vrscene/scene_materials.vrscene"))
+    from pprint import pprint
+
+    vrsceneDict = ParseVrscene("/home/bdancer/devel/vrayblender/test-suite/vismat/test_import_materials.vrscene")
+
+    for pluginDesc in vrsceneDict:
+        pprint(pluginDesc)
