@@ -22,23 +22,108 @@
 # All Rights Reserved. V-Ray(R) is a registered trademark of Chaos Software.
 #
 
-from xml.dom import minidom
+from xml.etree import ElementTree
+
+from pprint  import pprint
 
 
 def GetXMLMaterialsNames(filepath):
-    xmldoc = minidom.parse(filepath)
+    tree  = ElementTree.parse(filepath)
+    vrmat = tree.getroot()
 
     materialPluginNames = []
 
-    for item in xmldoc.getElementsByTagName('Asset'):
-        if item.attributes['type'].value == 'material':
-            url = str(item.attributes['url'].value)
-            if url.startswith("/"):
-                url = url[1:]
-            materialPluginNames.append(url)
+    for asset in vrmat:
+        assetType = asset.attrib['type']
+        if assetType not in {'material'}:
+            continue
+
+        url = asset.attrib['url']
+        if url.startswith("/"):
+            url = url[1:]
+
+        materialPluginNames.append(url)
 
     return materialPluginNames
 
 
+def ParseVrmat(filepath):
+    def _getColorValue(rawValue):
+        return (
+            float(rawValue.find('r').text),
+            float(rawValue.find('g').text),
+            float(rawValue.find('b').text),
+        )
+
+    sceneDesc = []
+
+    tree = ElementTree.parse(filepath)
+
+    vrmat = tree.getroot()
+
+    for asset in vrmat:
+        assetType = asset.attrib['type']
+
+        vrayPluginName = asset.attrib['url']
+
+        for vrayplugin in asset.iter('vrayplugin'):
+            vrayPluginID = vrayplugin.attrib['name']
+
+            vrayPluginAttributes = {}
+
+            for parameter in vrayplugin.iter('parameter'):
+                attrName  = parameter.attrib['name']
+                attrType  = parameter.attrib['type']
+                attrValue = None
+
+                # print("Found attribute: %s [%s]" % (attrName, attrType))
+
+                rawValue = parameter.find('value')
+                if rawValue is None:
+                    continue
+
+                if attrType == 'integer':
+                    attrValue = int(rawValue.text)
+
+                elif attrType == 'float':
+                    attrValue = float(rawValue.text)
+
+                elif attrType == 'bool':
+                    attrValue = bool(rawValue.text)
+
+                elif attrType == 'color':
+                    if rawValue.find('r') is not None:
+                        attrValue = _getColorValue(rawValue)
+
+                elif attrType == 'float texture':
+                    if rawValue.text:
+                        if rawValue.text.replace('.','',1).isdigit():
+                            attrValue = float(rawValue.text)
+                        else:
+                            attrValue = rawValue.text
+
+                elif attrType == 'acolor texture':
+                    if rawValue.text:
+                        if rawValue.find('r') is None:
+                            attrValue = rawValue.text
+                        else:
+                            attrValue = _getColorValue(rawValue)
+
+                elif attrType in {'plugin', 'string'}:
+                    attrValue = rawValue.text
+
+                if attrValue is not None:
+                    vrayPluginAttributes[attrName] = attrValue
+
+            sceneDesc.append({
+                "ID"         : vrayPluginID,
+                "Name"       : vrayPluginName,
+                "Attributes" : vrayPluginAttributes,
+            })
+
+    return sceneDesc
+
+
 if __name__ == '__main__':
-    print(GetXMLMaterialsNames("/home/bdancer/devel/vrayblender/bug-reports/andybot_vrmat/vray_mtl_metal1.vrmat"))
+    sceneDesc = ParseVrmat("/home/bdancer/devel/vrayblender/test-suite/vismat/marble_mtl.vismat")
+    pprint(sceneDesc)
