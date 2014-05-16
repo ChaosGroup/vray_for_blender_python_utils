@@ -63,6 +63,9 @@ semi   = Literal(";").suppress()
 dot    = Literal(".")
 comma  = Literal(",")
 
+interpolate_start = Word("interpolate((").suppress()
+interpolate_end   = Literal("))").suppress()
+
 # Keywords
 #
 Color = Keyword("Color").suppress()
@@ -89,7 +92,10 @@ output = nameType + Optional(Word("::") + Word(alphas+"_"))
 attrName  = nameType
 attrValue = integer ^ real ^ color ^ acolor ^ nameType ^ output ^ quotedString.setParseAction(no_quotes) ^ intList ^ strList
 
+attrAnimValue = Optional(interpolate_start) + attrValue + Optional(interpolate_end)
+
 pluginAttr = Group(attrName + equals + attrValue + semi)
+# pluginAttr = Group(attrName + equals + attrAnimValue + semi)
 
 # Plugin
 #
