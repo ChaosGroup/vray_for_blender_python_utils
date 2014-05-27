@@ -22,10 +22,17 @@
 # All Rights Reserved. V-Ray(R) is a registered trademark of Chaos Software.
 #
 
-from .pyparsing import Literal, CaselessLiteral, Word, Keyword
-from .pyparsing import OneOrMore, ZeroOrMore, Group, Combine, Optional
-from .pyparsing import alphas, nums, alphanums, quotedString, delimitedList, quotedString
-from .pyparsing import restOfLine, cStyleComment
+if __name__ == '__main__':
+    from pyparsing import Literal, CaselessLiteral, Word, Keyword
+    from pyparsing import OneOrMore, ZeroOrMore, Group, Combine, Optional
+    from pyparsing import alphas, nums, alphanums, quotedString, delimitedList, quotedString
+    from pyparsing import restOfLine, cStyleComment
+    from pyparsing import Dict
+else:
+    from .pyparsing import Literal, CaselessLiteral, Word, Keyword
+    from .pyparsing import OneOrMore, ZeroOrMore, Group, Combine, Optional
+    from .pyparsing import alphas, nums, alphanums, quotedString, delimitedList, quotedString
+    from .pyparsing import restOfLine, cStyleComment
 
 
 # Returns parsed description dict
@@ -63,15 +70,21 @@ semi   = Literal(";").suppress()
 dot    = Literal(".")
 comma  = Literal(",")
 
-interpolate_start = Word("interpolate((").suppress()
-interpolate_end   = Literal("))").suppress()
-
 # Keywords
 #
-Color = Keyword("Color").suppress()
-AColor = Keyword("AColor").suppress()
-List = Keyword("List").suppress()
-ListInt = Keyword("ListInt").suppress()
+Color        = Keyword("Color").suppress()
+AColor       = Keyword("AColor").suppress()
+Vector       = Keyword("Vector").suppress()
+Matrix       = Keyword("Matrix").suppress()
+Transform    = Keyword("Transform").suppress()
+TransformHex = Keyword("TransformHex").suppress()
+
+List          = Keyword("List").suppress()
+ListInt       = Keyword("ListInt").suppress()
+ListIntHex    = Keyword("ListIntHex").suppress()
+ListFloatHex  = Keyword("ListFloatHex").suppress()
+ListVectorHex = Keyword("ListVectorHex").suppress()
+ListColorHex  = Keyword("ListColorHex").suppress()
 
 # Values
 #
@@ -83,19 +96,38 @@ integer = Word(nums+"+-", nums).setParseAction(to_int)
 color   = Color   + lparen + Group(delimitedList(real)).setParseAction(to_list)     + rparen
 acolor  = AColor  + lparen + Group(delimitedList(real)).setParseAction(to_list)     + rparen
 intList = ListInt + lparen + Group(delimitedList(integer)).setParseAction(to_list)  + rparen
-strList = List    + lparen + Group(delimitedList(nameType)).setParseAction(to_list) + rparen
+
+strList = List    + lparen + Group(Optional(delimitedList(nameType))).setParseAction(to_list) + rparen
+
+vector = Vector + lparen + Group(delimitedList(real)).setParseAction(to_list)   + rparen
+matrix = Matrix + lparen + Group(delimitedList(vector)).setParseAction(to_list) + rparen
+
+transform = Transform + lparen + Group(matrix + comma.suppress() + vector).setParseAction(to_list) + rparen
+
+listIntHex    = ListIntHex    + lparen + quotedString.setParseAction(no_quotes) + rparen
+listFloatHex  = ListFloatHex  + lparen + quotedString.setParseAction(no_quotes) + rparen
+listVectorHex = ListVectorHex + lparen + quotedString.setParseAction(no_quotes) + rparen
+transformHex  = TransformHex  + lparen + quotedString.setParseAction(no_quotes) + rparen
 
 output = nameType + Optional(Word("::") + Word(alphas+"_"))
+
+frame = real ^ integer
+
+interpolate_start = (Word("interpolate((") + frame + comma).suppress()
+interpolate_end   = Literal("))").suppress()
 
 # Plugin Attribute
 #
 attrName  = nameType
-attrValue = integer ^ real ^ color ^ acolor ^ nameType ^ output ^ quotedString.setParseAction(no_quotes) ^ intList ^ strList
+
+attrValue = integer ^ real ^ color ^ acolor ^ vector ^ nameType ^ output ^ quotedString.setParseAction(no_quotes)
+attrValue = attrValue ^ strList ^ intList
+attrValue = attrValue ^ transform ^ transformHex
+attrValue = attrValue ^ listIntHex ^ listFloatHex ^ listVectorHex
 
 attrAnimValue = Optional(interpolate_start) + attrValue + Optional(interpolate_end)
 
-pluginAttr = Group(attrName + equals + attrValue + semi)
-# pluginAttr = Group(attrName + equals + attrAnimValue + semi)
+pluginAttr = Group(attrName + equals + attrAnimValue + semi)
 
 # Plugin
 #
@@ -136,9 +168,17 @@ def GetMaterialsNames(filepath):
 
 
 if __name__ == '__main__':
+    import argparse
     from pprint import pprint
 
-    vrsceneDict = ParseVrscene("/home/bdancer/devel/vrayblender/test-suite/vismat/test_import_materials.vrscene")
+    parser = argparse.ArgumentParser()
+    parser.add_argument('filepath', nargs='?')
+    args = parser.parse_args()
+
+    vrsceneDict = ParseVrscene(args.filepath)
 
     for pluginDesc in vrsceneDict:
-        pprint(pluginDesc)
+        print("Name:", pluginDesc['Name'])
+        print("ID:  ", pluginDesc['ID'])
+        print("Attributes:")
+        pprint(pluginDesc['Attributes'], indent=4)
