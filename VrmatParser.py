@@ -112,6 +112,9 @@ def ParseVrmat(filepath):
                 elif attrType in {'plugin', 'string'}:
                     attrValue = rawValue.text
 
+                elif attrType == 'list':
+                    attrValue = [v.text for v in rawValue.find('list').iter('entry')]
+
                 if attrValue is not None:
                     vrayPluginAttributes[attrName] = attrValue
 
@@ -125,5 +128,17 @@ def ParseVrmat(filepath):
 
 
 if __name__ == '__main__':
-    sceneDesc = ParseVrmat("/home/bdancer/devel/vrayblender/test-suite/vismat/marble_mtl.vismat")
-    pprint(sceneDesc)
+    import argparse
+    from pprint import pprint
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('filepath', nargs='?')
+    args = parser.parse_args()
+
+    vrsceneDict = ParseVrmat(args.filepath)
+
+    for pluginDesc in vrsceneDict:
+        print("Name:", pluginDesc['Name'])
+        print("ID:  ", pluginDesc['ID'])
+        print("Attributes:")
+        pprint(pluginDesc['Attributes'], indent=4)
