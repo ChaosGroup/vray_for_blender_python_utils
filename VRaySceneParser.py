@@ -81,6 +81,7 @@ TransformHex = Keyword("TransformHex").suppress()
 
 List          = Keyword("List").suppress()
 ListInt       = Keyword("ListInt").suppress()
+ListFloat     = Keyword("ListFloat").suppress()
 ListIntHex    = Keyword("ListIntHex").suppress()
 ListFloatHex  = Keyword("ListFloatHex").suppress()
 ListVectorHex = Keyword("ListVectorHex").suppress()
@@ -95,9 +96,10 @@ integer = Word(nums+"+-", nums).setParseAction(to_int)
 
 color   = Color   + lparen + Group(delimitedList(real)).setParseAction(to_list)     + rparen
 acolor  = AColor  + lparen + Group(delimitedList(real)).setParseAction(to_list)     + rparen
-intList = ListInt + lparen + Group(delimitedList(integer)).setParseAction(to_list)  + rparen
 
-strList = List    + lparen + Group(Optional(delimitedList(nameType))).setParseAction(to_list) + rparen
+strList   = List      + lparen + Group(Optional(delimitedList(nameType))).setParseAction(to_list) + rparen
+intList   = ListInt   + lparen + Group(delimitedList(integer)).setParseAction(to_list)            + rparen
+floatList = ListFloat + lparen + Group(delimitedList(real)).setParseAction(to_list)               + rparen
 
 vector = Vector + lparen + Group(delimitedList(real)).setParseAction(to_list)   + rparen
 matrix = Matrix + lparen + Group(delimitedList(vector)).setParseAction(to_list) + rparen
@@ -121,7 +123,7 @@ interpolate_end   = Literal("))").suppress()
 attrName  = nameType
 
 attrValue = integer ^ real ^ color ^ acolor ^ vector ^ nameType ^ output ^ quotedString.setParseAction(no_quotes)
-attrValue = attrValue ^ strList ^ intList
+attrValue = attrValue ^ strList ^ intList ^ floatList
 attrValue = attrValue ^ transform ^ transformHex
 attrValue = attrValue ^ listIntHex ^ listFloatHex ^ listVectorHex
 
