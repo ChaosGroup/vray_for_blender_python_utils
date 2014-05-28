@@ -82,6 +82,9 @@ TransformHex = Keyword("TransformHex").suppress()
 List          = Keyword("List").suppress()
 ListInt       = Keyword("ListInt").suppress()
 ListFloat     = Keyword("ListFloat").suppress()
+ListVector    = Keyword("ListVector").suppress()
+ListString    = Keyword("ListString").suppress()
+
 ListIntHex    = Keyword("ListIntHex").suppress()
 ListFloatHex  = Keyword("ListFloatHex").suppress()
 ListVectorHex = Keyword("ListVectorHex").suppress()
@@ -93,23 +96,30 @@ nameType = Word(alphanums+"@_:")
 
 real    = Combine(Word(nums+"+-", nums) + dot + Optional(Word(nums)) + Optional(CaselessLiteral("E") + Word(nums+"+-",nums))).setParseAction(to_float)
 integer = Word(nums+"+-", nums).setParseAction(to_int)
+number  = integer ^ real
 
-color   = Color   + lparen + Group(delimitedList(real)).setParseAction(to_list)     + rparen
-acolor  = AColor  + lparen + Group(delimitedList(real)).setParseAction(to_list)     + rparen
+color  = Color  + lparen + Group(delimitedList(number)).setParseAction(to_list)     + rparen
+acolor = AColor + lparen + Group(delimitedList(number)).setParseAction(to_list)     + rparen
+vector = Vector + lparen + Group(delimitedList(number)).setParseAction(to_list) + rparen
 
-strList   = List      + lparen + Group(Optional(delimitedList(nameType))).setParseAction(to_list) + rparen
-intList   = ListInt   + lparen + Group(delimitedList(integer)).setParseAction(to_list)            + rparen
-floatList = ListFloat + lparen + Group(delimitedList(real)).setParseAction(to_list)               + rparen
-
-vector = Vector + lparen + Group(delimitedList(real)).setParseAction(to_list)   + rparen
-matrix = Matrix + lparen + Group(delimitedList(vector)).setParseAction(to_list) + rparen
-
+matrix    = Matrix + lparen + Group(delimitedList(vector)).setParseAction(to_list) + rparen
 transform = Transform + lparen + Group(matrix + comma.suppress() + vector).setParseAction(to_list) + rparen
+
+transformHex = TransformHex  + lparen + quotedString.setParseAction(no_quotes) + rparen
+
+listStr    = List      + lparen + Group(Optional(delimitedList(nameType))).setParseAction(to_list) + rparen
+listInt    = ListInt   + lparen + Group(Optional(delimitedList(integer))).setParseAction(to_list)            + rparen
+listFloat  = ListFloat + lparen + Group(delimitedList(number)).setParseAction(to_list)             + rparen
+listVector = ListVector + lparen + Group(delimitedList(vector)).setParseAction(to_list) + rparen
+listString = ListString + lparen + Group(quotedString.setParseAction(no_quotes)).setParseAction(to_list) + rparen
 
 listIntHex    = ListIntHex    + lparen + quotedString.setParseAction(no_quotes) + rparen
 listFloatHex  = ListFloatHex  + lparen + quotedString.setParseAction(no_quotes) + rparen
-listVectorHex = ListVectorHex + lparen + quotedString.setParseAction(no_quotes) + rparen
-transformHex  = TransformHex  + lparen + quotedString.setParseAction(no_quotes) + rparen
+listVectorHex = ListVectorHex + lparen + quotedString.setParseAction(no_quotes)               + rparen
+listColorHex  = ListColorHex  + lparen + quotedString.setParseAction(no_quotes)               + rparen
+
+mapChannel = List + lparen + integer + comma.suppress() + listVector  + comma.suppress() + listInt + rparen
+mapChannelsList = List + lparen + ZeroOrMore(Group(mapChannel)) + rparen
 
 output = nameType + Optional(Word("::") + Word(alphas+"_"))
 
@@ -123,9 +133,10 @@ interpolate_end   = Literal("))").suppress()
 attrName  = nameType
 
 attrValue = integer ^ real ^ color ^ acolor ^ vector ^ nameType ^ output ^ quotedString.setParseAction(no_quotes)
-attrValue = attrValue ^ strList ^ intList ^ floatList
+attrValue = attrValue ^ listStr ^ listInt ^ listFloat ^ listVector ^ listString
 attrValue = attrValue ^ transform ^ transformHex
 attrValue = attrValue ^ listIntHex ^ listFloatHex ^ listVectorHex
+attrValue = attrValue ^ mapChannelsList
 
 attrAnimValue = Optional(interpolate_start) + attrValue + Optional(interpolate_end)
 
