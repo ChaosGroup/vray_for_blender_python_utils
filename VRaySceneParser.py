@@ -94,7 +94,7 @@ ListColorHex  = Keyword("ListColorHex").suppress()
 #
 nameType = Word(alphanums+"@_:")
 
-real    = Combine(Word(nums+"+-", nums) + dot + Optional(Word(nums)) + Optional(CaselessLiteral("E") + Word(nums+"+-",nums))).setParseAction(to_float)
+real    = Combine(Word(nums+"+-", nums) + Optional(dot) + Optional(Word(nums)) + Optional(CaselessLiteral("E") + Word(nums+"+-",nums))).setParseAction(to_float)
 integer = Word(nums+"+-", nums).setParseAction(to_int)
 number  = integer ^ real
 
