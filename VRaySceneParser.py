@@ -94,7 +94,7 @@ ListColorHex  = Keyword("ListColorHex").suppress()
 
 # Values
 #
-nameType = Word(alphanums+"@_:")
+nameType = Word(alphanums+"@_:|")
 
 real    = Combine(Word(nums+"+-", nums) + Optional(dot) + Optional(Word(nums)) + Optional(CaselessLiteral("E") + Word(nums+"+-",nums))).setParseAction(to_float)
 integer = Word(nums+"+-", nums).setParseAction(to_int)
@@ -107,9 +107,10 @@ acolor = AColor + lparen + Group(delimitedList(number)).setParseAction(to_list) 
 vector = Vector + lparen + Group(delimitedList(number)).setParseAction(to_list) + rparen
 
 matrix    = Matrix + lparen + Group(delimitedList(vector)).setParseAction(to_list) + rparen
-transform = Transform + lparen + Group(matrix + comma.suppress() + vector).setParseAction(to_list) + rparen
 
+transform = Transform + lparen + Group(matrix + comma.suppress() + vector).setParseAction(to_list) + rparen
 transformHex = TransformHex  + lparen + quotedString.setParseAction(no_quotes) + rparen
+tm = transform ^ transformHex
 
 listStr    = List      + lparen + Group(Optional(delimitedList(nameType ^ acolor))).setParseAction(to_list) + rparen
 listInt    = ListInt   + lparen + Group(Optional(delimitedList(integer))).setParseAction(to_list)            + rparen
@@ -124,6 +125,15 @@ listColorHex  = ListColorHex  + lparen + quotedString.setParseAction(no_quotes) 
 
 mapChannel = List + lparen + integer + comma.suppress() + listVector  + comma.suppress() + listInt + rparen
 mapChannelsList = List + lparen + ZeroOrMore(Group(mapChannel)) + rparen
+
+#
+# instances=List(0,
+#     List(0,TransformHex(""),TransformHex(""),Node),
+#     List(1,TransformHex(""),TransformHex(""),Node),
+#     List(2,TransformHex(""),TransformHex(""),Node)
+# )
+instancerItem = List + lparen + integer + comma.suppress() + tm + comma.suppress() + tm + comma.suppress() + nameType + rparen
+instancerList = List + lparen + integer + comma.suppress() + ZeroOrMore(Group(delimitedList(instancerItem))) + rparen
 
 output = nameType + Optional(Word("::") + Word(alphas+"_"))
 
@@ -140,7 +150,7 @@ attrValue = integer ^ real ^ color ^ acolor ^ vector ^ nameType ^ output ^ quote
 attrValue = attrValue ^ listStr ^ listInt ^ listFloat ^ listVector ^ listString
 attrValue = attrValue ^ transform ^ transformHex
 attrValue = attrValue ^ listIntHex ^ listFloatHex ^ listVectorHex
-attrValue = attrValue ^ mapChannelsList
+attrValue = attrValue ^ mapChannelsList ^ instancerList
 attrValue = attrValue ^ number_range
 
 attrAnimValue = Optional(interpolate_start) + attrValue + Optional(interpolate_end)
@@ -150,7 +160,7 @@ pluginAttr = Group(attrName + equals + attrAnimValue + semi)
 # Plugin
 #
 pluginType = Word(alphanums)
-pluginName = Word(alphanums+"@_")
+pluginName = nameType
 
 pluginDesc = Group(pluginType + pluginName + lbrace + Group(ZeroOrMore(pluginAttr)) + rbrace).setParseAction(getPluginDesc)
 pluginDesc.ignore("//"+restOfLine)
