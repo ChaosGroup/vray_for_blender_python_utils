@@ -69,6 +69,8 @@ equals = Literal("=").suppress()
 semi   = Literal(";").suppress()
 dot    = Literal(".")
 comma  = Literal(",")
+aster  = Literal("*").suppress()
+minus  = Literal("-").suppress()
 
 # Keywords
 #
@@ -98,8 +100,10 @@ real    = Combine(Word(nums+"+-", nums) + Optional(dot) + Optional(Word(nums)) +
 integer = Word(nums+"+-", nums).setParseAction(to_int)
 number  = integer ^ real
 
-color  = Color  + lparen + Group(delimitedList(number)).setParseAction(to_list)     + rparen
-acolor = AColor + lparen + Group(delimitedList(number)).setParseAction(to_list)     + rparen
+number_range = Group(number + minus + number).setParseAction(to_list)
+
+color  = Color  + lparen + Group(delimitedList(number)).setParseAction(to_list) + rparen + Optional(aster + number)
+acolor = AColor + lparen + Group(delimitedList(number)).setParseAction(to_list) + rparen
 vector = Vector + lparen + Group(delimitedList(number)).setParseAction(to_list) + rparen
 
 matrix    = Matrix + lparen + Group(delimitedList(vector)).setParseAction(to_list) + rparen
@@ -107,7 +111,7 @@ transform = Transform + lparen + Group(matrix + comma.suppress() + vector).setPa
 
 transformHex = TransformHex  + lparen + quotedString.setParseAction(no_quotes) + rparen
 
-listStr    = List      + lparen + Group(Optional(delimitedList(nameType))).setParseAction(to_list) + rparen
+listStr    = List      + lparen + Group(Optional(delimitedList(nameType ^ acolor))).setParseAction(to_list) + rparen
 listInt    = ListInt   + lparen + Group(Optional(delimitedList(integer))).setParseAction(to_list)            + rparen
 listFloat  = ListFloat + lparen + Group(delimitedList(number)).setParseAction(to_list)             + rparen
 listVector = ListVector + lparen + Group(delimitedList(vector)).setParseAction(to_list) + rparen
@@ -137,6 +141,7 @@ attrValue = attrValue ^ listStr ^ listInt ^ listFloat ^ listVector ^ listString
 attrValue = attrValue ^ transform ^ transformHex
 attrValue = attrValue ^ listIntHex ^ listFloatHex ^ listVectorHex
 attrValue = attrValue ^ mapChannelsList
+attrValue = attrValue ^ number_range
 
 attrAnimValue = Optional(interpolate_start) + attrValue + Optional(interpolate_end)
 
