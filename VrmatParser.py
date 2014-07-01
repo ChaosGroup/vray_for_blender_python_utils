@@ -22,6 +22,8 @@
 # All Rights Reserved. V-Ray(R) is a registered trademark of Chaos Software.
 #
 
+import os
+
 from xml.etree import ElementTree
 
 from pprint  import pprint
@@ -123,6 +125,15 @@ def ParseVrmat(filepath):
                 "Name"       : vrayPluginName,
                 "Attributes" : vrayPluginAttributes,
             })
+
+    sceneDesc.append({
+        "ID" : 'ImportSettings',
+        "Name" : "Import Settings",
+        "Attributes" : {
+            'filepath' : filepath,
+            'dirpath'  : os.path.dirname(filepath),
+        },
+    })
 
     return sceneDesc
 

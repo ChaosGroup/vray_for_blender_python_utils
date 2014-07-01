@@ -23,6 +23,8 @@
 # All Rights Reserved. V-Ray(R) is a registered trademark of Chaos Software.
 #
 
+import os
+
 if __name__ == '__main__':
     from pyparsing import Literal, CaselessLiteral, Word, Keyword
     from pyparsing import OneOrMore, ZeroOrMore, Group, Combine, Optional
@@ -179,7 +181,16 @@ nameParser.ignore(cStyleComment)
 
 
 def ParseVrscene(filepath):
-    return sceneDesc.parseString(open(filepath, "r").read())
+    vrsceneDict = list(sceneDesc.parseString(open(filepath, "r").read()))
+    vrsceneDict.append({
+        "ID" : 'ImportSettings',
+        "Name" : "Import Settings",
+        "Attributes" : {
+            'filepath' : filepath,
+            'dirpath'  : os.path.dirname(filepath),
+        },
+    })
+    return vrsceneDict
 
 
 def GetMaterialsNames(filepath):
