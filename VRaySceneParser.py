@@ -1,3 +1,4 @@
+#!/usr/local/bin/python3
 #
 # V-Ray Python Tools
 #
