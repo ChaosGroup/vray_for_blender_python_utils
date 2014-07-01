@@ -123,13 +123,22 @@ listString = ListString + lparen + Group(quotedString.setParseAction(no_quotes))
 
 listIntHex    = ListIntHex    + lparen + quotedString.setParseAction(no_quotes) + rparen
 listFloatHex  = ListFloatHex  + lparen + quotedString.setParseAction(no_quotes) + rparen
-listVectorHex = ListVectorHex + lparen + quotedString.setParseAction(no_quotes)               + rparen
-listColorHex  = ListColorHex  + lparen + quotedString.setParseAction(no_quotes)               + rparen
+listVectorHex = ListVectorHex + lparen + quotedString.setParseAction(no_quotes) + rparen
+listColorHex  = ListColorHex  + lparen + quotedString.setParseAction(no_quotes) + rparen
 
-mapChannel = List + lparen + integer + comma.suppress() + listVector  + comma.suppress() + listInt + rparen
+vectorList = listVector ^ listVectorHex
+intList    = listInt    ^ listIntHex
+
+# map_channels=List(
+#     List(
+#         1,
+#         ListVectorHex("ZIPC6000000017000000eJxjYEAGDfYMWAGx4jA+iIawAZoWBHs="),
+#         ListIntHex("ZIPC1800000015000000eJxjY2BgYAFidiBmhdIgPgAB7AAi")
+#     )
+# );
+mapChannel = List + lparen + integer + comma.suppress() + vectorList  + comma.suppress() + intList + rparen
 mapChannelsList = List + lparen + ZeroOrMore(Group(mapChannel)) + rparen
 
-#
 # instances=List(0,
 #     List(0,TransformHex(""),TransformHex(""),Node),
 #     List(1,TransformHex(""),TransformHex(""),Node),
