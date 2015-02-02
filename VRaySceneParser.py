@@ -137,7 +137,7 @@ intList    = listInt    ^ listIntHex
 #     )
 # );
 mapChannel = List + lparen + integer + comma.suppress() + vectorList  + comma.suppress() + intList + rparen
-mapChannelsList = List + lparen + ZeroOrMore(Group(mapChannel)) + rparen
+mapChannelsList = List + lparen + ZeroOrMore(Group(delimitedList(mapChannel))) + rparen
 
 # instances=List(0,
 #     List(0,TransformHex(""),TransformHex(""),Node),
