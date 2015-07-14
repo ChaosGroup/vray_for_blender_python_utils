@@ -115,7 +115,7 @@ transform = Transform + lparen + Group(matrix + comma.suppress() + vector).setPa
 transformHex = TransformHex  + lparen + quotedString.setParseAction(no_quotes) + rparen
 tm = transform ^ transformHex
 
-listStr    = List      + lparen + Group(Optional(delimitedList(nameType ^ acolor))).setParseAction(to_list) + rparen
+listStr    = List      + lparen + Group(Optional(delimitedList(nameType ^ acolor ^ integer ^ number))).setParseAction(to_list) + rparen
 listInt    = ListInt   + lparen + Group(Optional(delimitedList(integer))).setParseAction(to_list)            + rparen
 listFloat  = ListFloat + lparen + Group(delimitedList(number)).setParseAction(to_list)             + rparen
 listVector = ListVector + lparen + Group(delimitedList(vector)).setParseAction(to_list) + rparen
