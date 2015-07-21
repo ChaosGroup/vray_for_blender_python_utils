@@ -35,7 +35,7 @@ def GetXMLMaterialsNames(filepath):
 
     materialPluginNames = []
 
-    for asset in vrmat:
+    for asset in vrmat.iter('Asset'):
         assetType = asset.attrib['type']
         if assetType not in {'material'}:
             continue
@@ -63,7 +63,7 @@ def ParseVrmat(filepath):
 
     vrmat = tree.getroot()
 
-    for asset in vrmat:
+    for asset in vrmat.iter('Asset'):
         assetType = asset.attrib['type']
 
         vrayPluginName = asset.attrib['url']
