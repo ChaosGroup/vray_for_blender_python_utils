@@ -160,7 +160,7 @@ attrName  = nameType
 
 attrValue = integer ^ real ^ color ^ acolor ^ vector ^ nameType ^ output ^ quotedString.setParseAction(no_quotes)
 attrValue = attrValue ^ listStr ^ listInt ^ listFloat ^ listVector ^ listString
-attrValue = attrValue ^ transform ^ transformHex
+attrValue = attrValue ^ matrix ^ transform ^ transformHex
 attrValue = attrValue ^ listIntHex ^ listFloatHex ^ listVectorHex
 attrValue = attrValue ^ mapChannelsList ^ instancerList
 attrValue = attrValue ^ number_range
