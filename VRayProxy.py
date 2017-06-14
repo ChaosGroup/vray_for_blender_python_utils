@@ -331,6 +331,9 @@ class MeshFile(MeshFileReader):
         self.meshFile = open(os.path.expanduser(filepath), "rb")
         self.frames = {}
 
+    def __del__(self):
+        if self.meshFile:
+            self.meshFile.close()
 
     def readHeader(self):
         self.vrayID = self.binRead("7s", 7)[0][:-1]
