@@ -26,11 +26,43 @@ import os
 
 from xml.etree import ElementTree
 
-from pprint  import pprint
+def _convertToXML(filepath):
+    import shutil
+    import subprocess
 
+    vrmatconvert = os.path.join(os.path.dirname(__file__), "..", "bin", "vrmatconvert.exe")
+
+    bakFile = "%s.bak" % (filepath)
+
+    shutil.copyfile(filepath, bakFile)
+
+    subprocess.call([vrmatconvert, bakFile, filepath])
+
+def _parseTree(filepath):
+    tree = None
+    try:
+        tree = ElementTree.parse(filepath)
+    except:
+        pass
+    return tree
+
+def _parserConvertTree(filepath):
+    if not os.path.exists(filepath):
+        return None
+
+    tree = _parseTree(filepath)
+    if tree is None:
+        _convertToXML(filepath)
+        tree = _parseTree(filepath)
+
+    return tree
 
 def GetXMLMaterialsNames(filepath):
-    tree  = ElementTree.parse(filepath)
+    tree = _parserConvertTree(filepath)
+    if tree is None:
+        print("Failed to parse VRmat file!")
+        return []
+
     vrmat = tree.getroot()
 
     materialPluginNames = []
@@ -48,7 +80,6 @@ def GetXMLMaterialsNames(filepath):
 
     return materialPluginNames
 
-
 def ParseVrmat(filepath):
     def _getColorValue(rawValue):
         return (
@@ -59,7 +90,10 @@ def ParseVrmat(filepath):
 
     sceneDesc = []
 
-    tree = ElementTree.parse(filepath)
+    tree = _parserConvertTree(filepath)
+    if tree is None:
+        print("Failed to parse VRmat file!")
+        return {}
 
     vrmat = tree.getroot()
 
